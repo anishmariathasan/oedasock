@@ -1,4 +1,4 @@
-# hcard
+# H-CARD
 ~~~
-A navegation footwear system
+A Navigation Footwear System
 ~~~
