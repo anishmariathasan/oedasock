@@ -1,6 +1,6 @@
 # Foot Cuff Control App
 
-This Android application is designed to control a foot cuff used to prevent edema. The app communicates with a **Seeed XIAO ESP32-C6 microcontroller** via Bluetooth to manage the inflation and deflation of the cuff based on strain readings. It features an emergency stop functionality, manual control buttons, a progress bar to visualize the cuff's inflation/deflation state, and Bluetooth connectivity for controlling the microcontroller.
+This Android application is designed to control a foot cuff used to prevent edema. The app communicates with a **Seeed XIAO ESP32-C6 microcontroller** via Bluetooth to manage the inflation and deflation of the cuff based on strain readings. It features an emergency stop functionality, manual control buttons, a progress bar to visualize the cuff's inflation/deflation state, and Bluetooth connectivity for controlling the microcontroller. It was created for an Imperial College London module project.
 
 ## Features
 
@@ -44,7 +44,7 @@ To install and run the app:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
