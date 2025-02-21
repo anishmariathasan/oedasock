@@ -1,25 +1,18 @@
 package com.example.cuff
-import com.example.cuff.R
+
 import android.Manifest
-import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothSocket
-import android.content.Intent
+import android.bluetooth.*
+import android.bluetooth.le.*
+import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.PorterDuff
-import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.Handler
+import android.os.Looper
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.io.IOException
-import java.util.UUID
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,31 +23,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emergencyStopButton: Button
     private lateinit var pressureBar: ProgressBar
 
-    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-    private var bluetoothSocket: BluetoothSocket? = null
-    private val deviceAddress = "XX:XX:XX:XX:XX:XX" //need to get the actual
-    private val uuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private var bluetoothGatt: BluetoothGatt? = null
+    private var bleScanner: BluetoothLeScanner? = null
+    private var pressureCharacteristic: BluetoothGattCharacteristic? = null
 
-    // Permission request codes
-    private val BLUETOOTH_PERMISSIONS_REQUEST = 1
-
-    // Activity result launcher for Bluetooth enable request
-    private val enableBluetoothLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            checkPermissionsAndConnect()
-        } else {
-            statusTextView.text = "Bluetooth Disabled"
-            Toast.makeText(this, "Bluetooth must be enabled to use this app", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private val SERVICE_UUID: UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+    private val CHARACTERISTIC_UUID: UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize UI elements
         statusTextView = findViewById(R.id.statusTextView)
         pressureTextView = findViewById(R.id.pressureTextView)
         inflateButton = findViewById(R.id.inflateButton)
@@ -62,182 +42,155 @@ class MainActivity : AppCompatActivity() {
         emergencyStopButton = findViewById(R.id.emergencyStopButton)
         pressureBar = findViewById(R.id.pressureBar)
 
-        // Check if device supports Bluetooth
+        bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        bleScanner = bluetoothAdapter?.bluetoothLeScanner
+
         if (bluetoothAdapter == null) {
-            statusTextView.text = "Bluetooth Not Supported"
+            statusTextView.text = "Bluetooth not supported"
             return
         }
 
-        // Set up button listeners
-        inflateButton.setOnClickListener {
-            if (hasRequiredPermissions()) sendCommand("INFLATE")
-            else checkPermissionsAndConnect()
-        }
-        deflateButton.setOnClickListener {
-            if (hasRequiredPermissions()) sendCommand("DEFLATE")
-            else checkPermissionsAndConnect()
-        }
-        emergencyStopButton.setOnClickListener {
-            if (hasRequiredPermissions()) sendCommand("EMERGENCY_STOP")
-            else checkPermissionsAndConnect()
-        }
+        inflateButton.setOnClickListener { sendCommand("INFLATE") }
+        deflateButton.setOnClickListener { sendCommand("DEFLATE") }
+        emergencyStopButton.setOnClickListener { sendCommand("EMERGENCY_STOP") }
 
-        // Initial connection attempt
-        checkPermissionsAndConnect()
+        checkPermissionsAndScan()
     }
 
-    private fun hasRequiredPermissions(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH
-            ) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.BLUETOOTH_ADMIN
-                    ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
+    private fun checkPermissionsAndScan() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
 
-    private fun checkPermissionsAndConnect() {
-        if (!bluetoothAdapter!!.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            enableBluetoothLauncher.launch(enableBtIntent)
-            return
-        }
-
-        val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.BLUETOOTH_CONNECT)
-        } else {
-            arrayOf(
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
-            )
-        }
-
-        if (!hasRequiredPermissions()) {
             ActivityCompat.requestPermissions(
-                this,
-                requiredPermissions,
-                BLUETOOTH_PERMISSIONS_REQUEST
+                this, arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ), 1
             )
         } else {
-            connectBluetoothDevice()
+            scanForDevice()
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            BLUETOOTH_PERMISSIONS_REQUEST -> {
-                if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                    connectBluetoothDevice()
-                } else {
-                    statusTextView.text = "Permission Denied"
-                    Toast.makeText(this, "Bluetooth permissions are required", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun connectBluetoothDevice() {
-        Thread {
-            try {
-                if (!hasRequiredPermissions()) {
-                    runOnUiThread {
-                        statusTextView.text = "Permission Required"
-                        return@runOnUiThread
+    private fun scanForDevice() {
+        statusTextView.text = "Scanning..."
+        val scanCallback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                if (result.device.name == "XIAO_ESP32C6") {
+                    statusTextView.text = "Device found, connecting..."
+                    if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            bluetoothGatt = result.device.connectGatt(this@MainActivity, false, gattCallback)
+                        } catch (e: SecurityException) {
+                            e.printStackTrace()
+                            runOnUiThread { statusTextView.text = "Permission Error: BLUETOOTH_CONNECT" }
+                        }
+                    } else {
+                        runOnUiThread { statusTextView.text = "BLUETOOTH_CONNECT permission not granted" }
                     }
-                    return@Thread
-                }
-
-                val device: BluetoothDevice = bluetoothAdapter?.getRemoteDevice(deviceAddress)!!
-                bluetoothSocket = device.createRfcommSocketToServiceRecord(uuid)
-                bluetoothAdapter.cancelDiscovery()
-                bluetoothSocket?.connect()
-                runOnUiThread { statusTextView.text = "Connected" }
-                listenForData()
-            } catch (e: IOException) {
-                e.printStackTrace()
-                runOnUiThread { statusTextView.text = "Connection Failed" }
-            } catch (e: SecurityException) {
-                e.printStackTrace()
-                runOnUiThread {
-                    statusTextView.text = "Permission Required"
-                    checkPermissionsAndConnect()
+                    bleScanner?.stopScan(this)
                 }
             }
-        }.start()
+        }
+        bleScanner?.startScan(scanCallback)
+        Handler(Looper.getMainLooper()).postDelayed({ bleScanner?.stopScan(scanCallback) }, 10000)
+    }
+
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            if (newState == BluetoothGatt.STATE_CONNECTED) {
+                runOnUiThread { statusTextView.text = "Connected, discovering services..." }
+                // Fix #1: Add permission check before discovering services
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        gatt.discoverServices()
+                    } catch (e: SecurityException) {
+                        e.printStackTrace()
+                        runOnUiThread { statusTextView.text = "Permission Error: Cannot discover services" }
+                    }
+                } else {
+                    runOnUiThread { statusTextView.text = "BLUETOOTH_CONNECT permission needed for service discovery" }
+                }
+            } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
+                runOnUiThread { statusTextView.text = "Disconnected" }
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val service = gatt.getService(SERVICE_UUID)
+                if (service != null) {
+                    pressureCharacteristic = service.getCharacteristic(CHARACTERISTIC_UUID)
+                    // Fix #2: Add permission check before setting characteristic notification
+                    if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            gatt.setCharacteristicNotification(pressureCharacteristic, true)
+                            runOnUiThread { statusTextView.text = "Connected to BLE" }
+                        } catch (e: SecurityException) {
+                            e.printStackTrace()
+                            runOnUiThread { statusTextView.text = "Permission Error: Cannot set notifications" }
+                        }
+                    } else {
+                        runOnUiThread { statusTextView.text = "BLUETOOTH_CONNECT permission needed for notifications" }
+                    }
+                } else {
+                    runOnUiThread { statusTextView.text = "Service not found" }
+                }
+            }
+        }
+
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            val data = characteristic.getStringValue(0)?.trim()
+            val pressure = data?.toIntOrNull() ?: return
+            runOnUiThread { updatePressureUI(pressure) }
+        }
     }
 
     private fun sendCommand(command: String) {
-        Thread {
-            try {
-                bluetoothSocket?.outputStream?.write(command.toByteArray())
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: SecurityException) {
-                runOnUiThread {
-                    statusTextView.text = "Permission Required"
-                    checkPermissionsAndConnect()
-                }
-            }
-        }.start()
-    }
-
-    private fun listenForData() {
-        val buffer = ByteArray(1024)
-        while (true) {
-            try {
-                val bytes = bluetoothSocket?.inputStream?.read(buffer) ?: -1
-                if (bytes > 0) {
-                    val data = String(buffer, 0, bytes)
-                    val pressure = data.trim().toIntOrNull() ?: continue
-                    runOnUiThread {
-                        updatePressureUI(pressure)
-                    }
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-                break
-            } catch (e: SecurityException) {
-                runOnUiThread {
-                    statusTextView.text = "Permission Required"
-                    checkPermissionsAndConnect()
-                }
-                break
-            }
+        if (pressureCharacteristic == null || bluetoothGatt == null) {
+            Toast.makeText(this, "BLE not connected", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "BLUETOOTH_CONNECT permission not granted", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            pressureCharacteristic!!.setValue(command)
+            bluetoothGatt!!.writeCharacteristic(pressureCharacteristic)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            runOnUiThread { statusTextView.text = "SecurityException: Permission required" }
         }
     }
 
     private fun updatePressureUI(pressure: Int) {
         pressureTextView.text = "Pressure: $pressure/10"
         pressureBar.progress = pressure * 10
-        when (pressure) {
-            in 7..10 -> pressureBar.progressDrawable.setColorFilter(
-                resources.getColor(android.R.color.holo_red_light), PorterDuff.Mode.SRC_IN)
-            in 4..6 -> pressureBar.progressDrawable.setColorFilter(
-                resources.getColor(android.R.color.holo_orange_light), PorterDuff.Mode.SRC_IN)
-            else -> pressureBar.progressDrawable.setColorFilter(
-                resources.getColor(android.R.color.holo_green_light), PorterDuff.Mode.SRC_IN)
+
+        val color = when (pressure) {
+            in 7..10 -> android.R.color.holo_red_light
+            in 4..6 -> android.R.color.holo_orange_light
+            else -> android.R.color.holo_green_light
         }
+        pressureBar.progressDrawable.setColorFilter(
+            ContextCompat.getColor(this, color),
+            android.graphics.PorterDuff.Mode.SRC_IN
+        )
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            bluetoothSocket?.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
+        // Fix #3: Add permission check before closing GATT
+        if (bluetoothGatt != null && ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                bluetoothGatt?.close()
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
         }
     }
 }
