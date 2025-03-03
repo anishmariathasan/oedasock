@@ -25,6 +25,15 @@ androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecy
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
+nordic-ble = "no.nordicsemi.android:ble:2.7.0"
+nordic-ble-common = "no.nordicsemi.android:ble-common:2.7.0"
+nordic-ble-ktx = "no.nordicsemi.android:ble-ktx:2.7.0"
+nordic-scanner = "no.nordicsemi.android.support.v18:scanner:1.6.0"
+
+lifecycle-runtime-ktx = "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
+lifecycle-viewmodel-ktx = "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
+lifecycle-livedata-ktx = "androidx.lifecycle:lifecycle-livedata-ktx:2.6.2"
+activity-ktx = "androidx.activity:activity-ktx:1.8.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
