@@ -1,6 +1,6 @@
 # Foot Cuff Control App
 
-This Android application is designed to control a foot cuff used to prevent edema. The app communicates with a **Seeed XIAO ESP32-C6 microcontroller** via BLE to manage the inflation and deflation of the cuff based on strain readings. It features an emergency stop functionality, manual control buttons, a progress bar to visualize the cuff's inflation/deflation state, and BLE connectivity for controlling the microcontroller. It was created for an Imperial College London module project. The NordicSemiconductor Kotlin BLE Library has been used as a wrapped around the native API as BLE in Android is a pain.
+This Android application is designed to control a foot cuff used to prevent edema. The app communicates with a **Seeed XIAO ESP32-C6 microcontroller** via BLE to manage the inflation and deflation of the cuff based on strain readings. It features an emergency stop functionality, manual control buttons, a progress bar to visualize the cuff's inflation/deflation state, and BLE connectivity for controlling the microcontroller. It was created for an Imperial College London module project. The NordicSemiconductor Kotlin BLE Library has been used as a wrapper around the native API as BLE in Android is a pain.
 
 ## Features
 
@@ -48,7 +48,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE.txt](LI
 
 ## Acknowledgments
 
-- Thank you to all the contributors and open-source libraries used in this project.
+- Thank you to all the contributors and open-source libraries used in this project, especially NordicSemiconductor for their Kotlin-BLE library.
 - Special thanks to the BLE library that allows seamless communication with the **Seeed XIAO ESP32-C6 microcontroller**.
 
 ## Primary Contributor
