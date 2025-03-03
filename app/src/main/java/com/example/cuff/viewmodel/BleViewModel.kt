@@ -83,6 +83,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
         override fun onDeviceReady(device: BluetoothDevice) {
             log("Device ready")
+            _connectionState.postValue(ConnectionState.CONNECTED)
+            _logMessage.postValue("Device ready")
         }
 
         override fun onDeviceDisconnecting(device: BluetoothDevice) {
