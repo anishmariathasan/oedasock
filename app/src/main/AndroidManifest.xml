@@ -28,6 +28,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.example.cuff.ui.LoginActivity"
+            android:exported="true"
+            android:label="@string/login_activity_label">
+            <!-- No intent-filter here as it is not the launcher activity -->
+        </activity>
+        <activity
+            android:name="com.example.cuff.ui.GraphActivity"
+            android:exported="true"
+            android:label="@string/graph_activity_label">
+            <!-- No intent-filter here as it is not the launcher activity -->
+        </activity>
     </application>
 
 </manifest>

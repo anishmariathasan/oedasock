@@ -7,7 +7,29 @@
     android:padding="16dp"
     android:background="@android:color/white">
 
+    <!-- Login Option Button (visible if not logged in) -->
+    <Button
+        android:id="@+id/loginOptionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp" />
+    <!-- Logout Button: Only visible when user is logged in -->
+
     <!-- Connection status indicator -->
+    <Button
+        android:id="@+id/logoutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="Logout"
+        android:textColor="@android:color/white" />
+
     <TextView
         android:id="@+id/statusTextView"
         android:layout_width="wrap_content"
@@ -59,6 +81,7 @@
             android:layout_margin="8dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"/>
+
         <Button
             android:id="@+id/deflateButton"
             android:layout_width="wrap_content"
@@ -81,4 +104,26 @@
             android:paddingLeft="16dp"
             android:paddingRight="16dp"/>
     </LinearLayout>
+
+    <!-- Buttons for logged in users -->
+    <Button
+        android:id="@+id/savePressureButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Pressure"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:id="@+id/viewGraphsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View Graphs"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_marginTop="8dp"
+        android:layout_gravity="center_horizontal" />
+
 </LinearLayout>

@@ -1,16 +1,22 @@
 package com.example.cuff
 
 import android.Manifest
+import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
+import com.example.cuff.ui.LoginActivity
 import com.example.cuff.viewmodel.BleViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.cuff.ui.GraphActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,6 +26,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var deflateButton: Button
     private lateinit var emergencyStopButton: Button
     private lateinit var pressureBar: ProgressBar
+    private lateinit var loginOptionButton: Button
+    private lateinit var savePressureButton: Button
+    private lateinit var viewGraphsButton: Button
+    private lateinit var logoutButton: Button
+    private lateinit var prefs: SharedPreferences
 
     private val bleViewModel: BleViewModel by viewModels()
     private val PERMISSION_REQUEST_CODE = 1
@@ -28,6 +39,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Initialize SharedPreferences and check login state
+        prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
+        val userEmail = prefs.getString("userEmail", null)
+
         // Initialize UI components
         statusTextView = findViewById(R.id.statusTextView)
         pressureTextView = findViewById(R.id.pressureTextView)
@@ -35,13 +50,73 @@ class MainActivity : AppCompatActivity() {
         deflateButton = findViewById(R.id.deflateButton)
         emergencyStopButton = findViewById(R.id.emergencyStopButton)
         pressureBar = findViewById(R.id.pressureBar)
+        loginOptionButton = findViewById(R.id.loginOptionButton)
+        savePressureButton = findViewById(R.id.savePressureButton)
+        viewGraphsButton = findViewById(R.id.viewGraphsButton)
+        logoutButton = findViewById(R.id.logoutButton)
 
-        // Set button click listeners
+        // Set visibility of login/logout and user control buttons based on login state
+        if (userEmail == null) {
+            loginOptionButton.visibility = View.VISIBLE
+            savePressureButton.visibility = View.GONE
+            viewGraphsButton.visibility = View.GONE
+            logoutButton.visibility = View.GONE
+        } else {
+            loginOptionButton.visibility = View.GONE
+            savePressureButton.visibility = View.VISIBLE
+            viewGraphsButton.visibility = View.VISIBLE
+            logoutButton.visibility = View.VISIBLE
+        }
+
+        // BLE command listeners
         inflateButton.setOnClickListener { bleViewModel.sendCommand("INFLATE") }
         deflateButton.setOnClickListener { bleViewModel.sendCommand("DEFLATE") }
         emergencyStopButton.setOnClickListener { bleViewModel.sendCommand("EMERGENCY_STOP") }
 
-        // Observe connection state
+        // Login button navigates to LoginActivity
+        loginOptionButton.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
+
+        // Logout button: clear login info and update UI
+        logoutButton.setOnClickListener {
+            prefs.edit().remove("userEmail").apply()
+            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+            // Option 1: Restart MainActivity to update UI
+            val intent = intent
+            finish()
+            startActivity(intent)
+            // Option 2: Alternatively, navigate to LoginActivity if you want to force a new login.
+            // startActivity(Intent(this, LoginActivity::class.java))
+            // finish()
+        }
+
+        // Save Pressure button saves current pressure to Firestore with timestamp
+        savePressureButton.setOnClickListener {
+            val currentPressure = bleViewModel.pressureData.value ?: 0
+            val timestamp = System.currentTimeMillis()
+            val db = FirebaseFirestore.getInstance()
+            val data = hashMapOf(
+                "user" to userEmail,
+                "pressure" to currentPressure,
+                "timestamp" to timestamp
+            )
+            db.collection("pressureData")
+                .add(data)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Pressure data saved", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Error saving data: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
+
+        // View Graphs button launches GraphActivity
+        viewGraphsButton.setOnClickListener {
+            startActivity(Intent(this, GraphActivity::class.java))
+        }
+
+        // Observe BLE connection state
         bleViewModel.connectionState.observe(this, Observer { state ->
             when (state) {
                 BleViewModel.ConnectionState.CONNECTED -> {
@@ -73,7 +148,7 @@ class MainActivity : AppCompatActivity() {
             statusTextView.text = message
         })
 
-        // Check for required permissions
+        // Check for required permissions and start BLE scan
         checkPermissionsAndStartScan()
     }
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "422032637180",
+    "project_id": "cuff-ai",
+    "storage_bucket": "cuff-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422032637180:android:d4cb5c32bbe144ac146b79",
+        "android_client_info": {
+          "package_name": "com.example.cuff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkl-QkDSOf0QLowQu4kHBh0FU7fenpDtM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
