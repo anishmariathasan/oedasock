@@ -9,28 +9,28 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center">
+        android:padding="24dp">
 
         <!-- Header Text -->
         <TextView
             android:id="@+id/headerText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Welcome"
-            android:textSize="28sp"
-            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
+            android:text="Welcome to Cuff.AI!"
             android:textColor="@color/black"
-            android:layout_marginBottom="24dp"/>
+            android:textSize="28sp"
+            android:textStyle="bold" />
 
         <!-- CardView for Login Form -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
             card_view:cardCornerRadius="8dp"
-            card_view:cardElevation="4dp"
-            android:layout_marginBottom="24dp">
+            card_view:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -40,72 +40,80 @@
 
                 <!-- Email Field -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Email"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    android:hint="Email">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/emailEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"/>
+                        android:inputType="textEmailAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Weight Field -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Weight (kg)"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="12dp"
+                    android:hint="Weight (kg)">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/weightEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="numberDecimal"/>
+                        android:inputType="numberDecimal" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Height Field -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Height (cm)"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="12dp"
+                    android:hint="Height (cm)">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/heightEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="numberDecimal"/>
+                        android:inputType="numberDecimal" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Age Field -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Age"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="12dp"
+                    android:hint="Age">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/ageEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="number"/>
+                        android:inputType="number" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Gender Field -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Gender"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_marginTop="12dp">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/genderEditText"
+
+                    <AutoCompleteTextView
+                        android:id="@+id/genderAutoCompleteTextView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="text"/>
+                        android:inputType="none"
+                        android:hint="Select Gender"
+                        android:contentDescription="Gender selection dropdown" />
+
                 </com.google.android.material.textfield.TextInputLayout>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -114,10 +122,21 @@
             android:id="@+id/loginButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Login / Register"
-            android:textColor="@android:color/white"
+            android:layout_marginBottom="16dp"
             android:backgroundTint="@color/teal_700"
             android:padding="12dp"
-            android:layout_marginBottom="16dp"/>
+            android:text="Login / Register"
+            android:textColor="@android:color/white" />
+        <!-- Back Button -->
+        <Button
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:text="Back"
+            android:textColor="@android:color/white" />
+
     </LinearLayout>
 </ScrollView>

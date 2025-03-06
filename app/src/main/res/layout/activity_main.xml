@@ -17,29 +17,43 @@
         android:backgroundTint="@color/colorPrimary"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp" />
-    <!-- Logout Button: Only visible when user is logged in -->
 
-    <!-- Connection status indicator -->
+    <!-- Logout Button: Only visible when user is logged in -->
     <Button
         android:id="@+id/logoutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="@color/colorPrimary"
         android:text="Logout"
-        android:textColor="@android:color/white" />
-
-    <TextView
-        android:id="@+id/statusTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Not Connected"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/colorPrimary"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginTop="16dp" />
+
+    <!-- Connection status indicator with icon -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="16dp">
+
+        <ImageView
+            android:id="@+id/connectionStatusIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_bluetooth_disconnected"
+             />
+
+        <TextView
+            android:id="@+id/statusTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Not Connected"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
 
     <!-- Pressure display -->
     <TextView

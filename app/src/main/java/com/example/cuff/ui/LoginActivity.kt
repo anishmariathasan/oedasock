@@ -1,8 +1,10 @@
 package com.example.cuff.ui
-
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Patterns
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -17,9 +19,10 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var weightEditText: EditText
     private lateinit var heightEditText: EditText
     private lateinit var ageEditText: EditText
-    private lateinit var genderEditText: EditText
+    private lateinit var genderAutoCompleteTextView: AutoCompleteTextView
     private lateinit var loginButton: Button
     private lateinit var prefs: SharedPreferences
+    private lateinit var backButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,15 +34,36 @@ class LoginActivity : AppCompatActivity() {
         weightEditText = findViewById(R.id.weightEditText)
         heightEditText = findViewById(R.id.heightEditText)
         ageEditText = findViewById(R.id.ageEditText)
-        genderEditText = findViewById(R.id.genderEditText)
         loginButton = findViewById(R.id.loginButton)
+        backButton = findViewById(R.id.backButton)
+
+        // Initialize AutoCompleteTextView for gender selection
+        genderAutoCompleteTextView = findViewById(R.id.genderAutoCompleteTextView)
+
+        // Define the gender options
+        val genderOptions = arrayOf("Male", "Female", "Other")
+
+        // Create an adapter for the AutoCompleteTextView
+        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, genderOptions)
+        genderAutoCompleteTextView.setAdapter(adapter)
+
+        // Handle back button click to return to MainActivity
+        backButton.setOnClickListener {
+            finish()  // Closes LoginActivity and returns to MainActivity
+        }
 
         loginButton.setOnClickListener {
             val email = emailEditText.text.toString().trim()
             val weight = weightEditText.text.toString().trim().toFloatOrNull()
             val height = heightEditText.text.toString().trim().toFloatOrNull()
             val age = ageEditText.text.toString().trim().toIntOrNull()
-            val gender = genderEditText.text.toString().trim()
+            val gender = genderAutoCompleteTextView.text.toString().trim()
+
+            // Validate email address
+            if (!isValidEmail(email)) {
+                Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             if (email.isEmpty() || weight == null || height == null || age == null || gender.isEmpty()) {
                 Toast.makeText(this, "Please fill all fields correctly", Toast.LENGTH_SHORT).show()
@@ -61,7 +85,7 @@ class LoginActivity : AppCompatActivity() {
                 .addOnSuccessListener {
                     // Save user email locally to remember login state
                     prefs.edit().putString("userEmail", email).apply()
-                    Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 }
@@ -69,5 +93,10 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         }
+    }
+
+    // Function to validate email using regex
+    private fun isValidEmail(email: String): Boolean {
+        return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 }

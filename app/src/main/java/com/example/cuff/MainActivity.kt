@@ -21,6 +21,7 @@ import com.example.cuff.ui.GraphActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var statusTextView: TextView
+    private lateinit var connectionStatusIcon: ImageView  // <-- New
     private lateinit var pressureTextView: TextView
     private lateinit var inflateButton: Button
     private lateinit var deflateButton: Button
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         val userEmail = prefs.getString("userEmail", null)
 
         // Initialize UI components
+        connectionStatusIcon = findViewById(R.id.connectionStatusIcon)  // icon
         statusTextView = findViewById(R.id.statusTextView)
         pressureTextView = findViewById(R.id.pressureTextView)
         inflateButton = findViewById(R.id.inflateButton)
@@ -78,17 +80,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, LoginActivity::class.java))
         }
 
-        // Logout button: clear login info and update UI
+        // Logout button clears the login state
         logoutButton.setOnClickListener {
             prefs.edit().remove("userEmail").apply()
             Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
-            // Option 1: Restart MainActivity to update UI
-            val intent = intent
             finish()
             startActivity(intent)
-            // Option 2: Alternatively, navigate to LoginActivity if you want to force a new login.
-            // startActivity(Intent(this, LoginActivity::class.java))
-            // finish()
         }
 
         // Save Pressure button saves current pressure to Firestore with timestamp
@@ -116,24 +113,43 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, GraphActivity::class.java))
         }
 
-        // Observe BLE connection state
+        // Observe BLE connection state - the icons arent updaitng here i dont think
         bleViewModel.connectionState.observe(this, Observer { state ->
             when (state) {
                 BleViewModel.ConnectionState.CONNECTED -> {
                     statusTextView.text = "Connected to XIAO_ESP32C6"
+                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_connected)
                     enableButtons(true)
                 }
                 BleViewModel.ConnectionState.CONNECTING -> {
                     statusTextView.text = "Connecting..."
+                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
                     enableButtons(false)
                 }
                 BleViewModel.ConnectionState.DISCONNECTING -> {
                     statusTextView.text = "Disconnecting..."
+                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
                     enableButtons(false)
                 }
                 BleViewModel.ConnectionState.DISCONNECTED -> {
                     statusTextView.text = "Disconnected"
+                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
                     enableButtons(false)
+                }
+            }
+        })
+        // Observe scan state - this method actually updates it corretly
+        bleViewModel.scanState.observe(this, Observer { scanState ->
+            when (scanState) {
+                BleViewModel.ScanState.SCANNING -> {
+                    statusTextView.text = "Scanning..."
+                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)  // Use the scanning icon
+                    enableButtons(false)  // Disable buttons during scan
+                }
+                BleViewModel.ScanState.IDLE -> {
+                    statusTextView.text = "Scan idle"
+                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)  // Idle state image
+                    enableButtons(true)  // Enable buttons when scan is idle
                 }
             }
         })
@@ -152,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         checkPermissionsAndStartScan()
     }
 
+
     private fun enableButtons(enabled: Boolean) {
         inflateButton.isEnabled = enabled
         deflateButton.isEnabled = enabled
@@ -160,8 +177,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissionsAndStartScan() {
         val requiredPermissions = mutableListOf<String>()
-
-        // Check for BLE scan permissions based on API level
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                 requiredPermissions.add(Manifest.permission.BLUETOOTH_SCAN)
@@ -174,7 +189,6 @@ class MainActivity : AppCompatActivity() {
                 requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
-
         if (requiredPermissions.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 this,
