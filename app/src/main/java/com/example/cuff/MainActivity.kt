@@ -21,7 +21,7 @@ import com.example.cuff.ui.GraphActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var statusTextView: TextView
-    private lateinit var connectionStatusIcon: ImageView  // <-- New
+    private lateinit var connectionStatusIcon: ImageView
     private lateinit var pressureTextView: TextView
     private lateinit var inflateButton: Button
     private lateinit var deflateButton: Button
@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private val bleViewModel: BleViewModel by viewModels()
     private val PERMISSION_REQUEST_CODE = 1
+    private val LOGIN_REQUEST_CODE = 100  // Added request code for login activity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         val userEmail = prefs.getString("userEmail", null)
 
         // Initialize UI components
-        connectionStatusIcon = findViewById(R.id.connectionStatusIcon)  // icon
+        connectionStatusIcon = findViewById(R.id.connectionStatusIcon)
         statusTextView = findViewById(R.id.statusTextView)
         pressureTextView = findViewById(R.id.pressureTextView)
         inflateButton = findViewById(R.id.inflateButton)
@@ -58,34 +59,23 @@ class MainActivity : AppCompatActivity() {
         logoutButton = findViewById(R.id.logoutButton)
 
         // Set visibility of login/logout and user control buttons based on login state
-        if (userEmail == null) {
-            loginOptionButton.visibility = View.VISIBLE
-            savePressureButton.visibility = View.GONE
-            viewGraphsButton.visibility = View.GONE
-            logoutButton.visibility = View.GONE
-        } else {
-            loginOptionButton.visibility = View.GONE
-            savePressureButton.visibility = View.VISIBLE
-            viewGraphsButton.visibility = View.VISIBLE
-            logoutButton.visibility = View.VISIBLE
-        }
+        updateUIBasedOnLoginState(userEmail)
 
         // BLE command listeners
         inflateButton.setOnClickListener { bleViewModel.sendCommand("INFLATE") }
         deflateButton.setOnClickListener { bleViewModel.sendCommand("DEFLATE") }
         emergencyStopButton.setOnClickListener { bleViewModel.sendCommand("EMERGENCY_STOP") }
 
-        // Login button navigates to LoginActivity
+        // Login button navigates to LoginActivity using startActivityForResult
         loginOptionButton.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
+            startActivityForResult(Intent(this, LoginActivity::class.java), LOGIN_REQUEST_CODE)
         }
 
-        // Logout button clears the login state
+        // Logout button clears the login state and updates UI without restarting activity
         logoutButton.setOnClickListener {
             prefs.edit().remove("userEmail").apply()
             Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
-            finish()
-            startActivity(intent)
+            updateUIBasedOnLoginState(null)
         }
 
         // Save Pressure button saves current pressure to Firestore with timestamp
@@ -113,7 +103,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, GraphActivity::class.java))
         }
 
-        // Observe BLE connection state - the icons arent updaitng here i dont think
+        // Observe BLE connection state
         bleViewModel.connectionState.observe(this, Observer { state ->
             when (state) {
                 BleViewModel.ConnectionState.CONNECTED -> {
@@ -138,18 +128,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-        // Observe scan state - this method actually updates it corretly
+
+        // Observe scan state
         bleViewModel.scanState.observe(this, Observer { scanState ->
             when (scanState) {
                 BleViewModel.ScanState.SCANNING -> {
                     statusTextView.text = "Scanning..."
-                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)  // Use the scanning icon
-                    enableButtons(false)  // Disable buttons during scan
+                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
+                    enableButtons(false)
                 }
                 BleViewModel.ScanState.IDLE -> {
                     statusTextView.text = "Scan idle"
-                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)  // Idle state image
-                    enableButtons(true)  // Enable buttons when scan is idle
+                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
+                    enableButtons(true)
                 }
             }
         })
@@ -168,6 +159,30 @@ class MainActivity : AppCompatActivity() {
         checkPermissionsAndStartScan()
     }
 
+    // New method to update UI based on login state
+    private fun updateUIBasedOnLoginState(userEmail: String?) {
+        if (userEmail == null) {
+            loginOptionButton.visibility = View.VISIBLE
+            savePressureButton.visibility = View.GONE
+            viewGraphsButton.visibility = View.GONE
+            logoutButton.visibility = View.GONE
+        } else {
+            loginOptionButton.visibility = View.GONE
+            savePressureButton.visibility = View.VISIBLE
+            viewGraphsButton.visibility = View.VISIBLE
+            logoutButton.visibility = View.VISIBLE
+        }
+    }
+
+    // Handle results from activities started with startActivityForResult
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Update UI based on new login state
+            val userEmail = prefs.getString("userEmail", null)
+            updateUIBasedOnLoginState(userEmail)
+        }
+    }
 
     private fun enableButtons(enabled: Boolean) {
         inflateButton.isEnabled = enabled

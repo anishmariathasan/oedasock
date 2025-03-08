@@ -191,7 +191,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
             scanner.stopScan(scanCallback)
             isScanning = false
             _scanState.value = ScanState.IDLE
-            log("Scan stopped")
+            log("Scan failed")
         } catch (e: Exception) {
             log("Error stopping scan: ${e.message}")
         }

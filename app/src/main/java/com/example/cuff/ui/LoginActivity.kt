@@ -49,6 +49,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Handle back button click to return to MainActivity
         backButton.setOnClickListener {
+            setResult(RESULT_CANCELED)
             finish()  // Closes LoginActivity and returns to MainActivity
         }
 
@@ -86,7 +87,9 @@ class LoginActivity : AppCompatActivity() {
                     // Save user email locally to remember login state
                     prefs.edit().putString("userEmail", email).apply()
                     Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this, MainActivity::class.java))
+
+                    // Instead of starting a new MainActivity, set result and finish
+                    setResult(RESULT_OK)
                     finish()
                 }
                 .addOnFailureListener { e ->

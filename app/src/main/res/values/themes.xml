@@ -11,7 +11,11 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+
+        <!-- Override Button Color -->
+        <item name="colorButtonNormal">#FF0000</item> <!-- Red color for all buttons -->
+
         <!-- Customize your theme here. -->
-        <item name="android:fontFamily">@font/opensans</item>
+        <item name="android:fontFamily">@font/poppinslight</item>
     </style>
 </resources>

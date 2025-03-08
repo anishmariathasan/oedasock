@@ -15,6 +15,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // Add this line for vector drawables
+        vectorDrawables.useSupportLibrary = true
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,12 +39,11 @@ android {
     }
     buildFeatures {
         viewBinding = true
-    }
 }
 
 dependencies {
     //firebase stuff
-    implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3")) //do not add to versions toml as it breaks it idk why
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth) //Authentication
     implementation(libs.firebase.firestore) //Firestore
@@ -73,4 +75,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-}
+}}

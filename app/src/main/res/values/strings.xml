@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cuff.AI</string>
+    <string name="app_name">OEDASOCK</string>
     <string name="login_activity_label">Login</string>
     <string name="graph_activity_label">Graphs</string>
 </resources>
