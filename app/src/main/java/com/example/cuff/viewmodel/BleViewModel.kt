@@ -87,6 +87,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
         override fun onDeviceFailedToConnect(device: BluetoothDevice, reason: Int) {
             _connectionState.postValue(ConnectionState.DISCONNECTED)
+            // Reset pressure to 0 when failed to connect
+            _pressureData.postValue(0)
             log("Failed to connect: $reason")
             isConnecting = false
             // Start periodic scanning
@@ -106,6 +108,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
         override fun onDeviceDisconnected(device: BluetoothDevice, reason: Int) {
             _connectionState.postValue(ConnectionState.DISCONNECTED)
+            // Reset pressure to 0 when disconnected
+            _pressureData.postValue(0)
             log("Disconnected: $reason")
             // Start periodic scanning
             startPeriodicScanning()
@@ -115,6 +119,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     init {
         _connectionState.value = ConnectionState.DISCONNECTED
         _scanState.value = ScanState.IDLE
+        _pressureData.value = 0  // Initialize pressure to 0
 
         // Set up pressure callback
         bleManager.setPressureCallback { pressure ->

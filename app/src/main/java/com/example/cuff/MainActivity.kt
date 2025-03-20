@@ -1,5 +1,6 @@
 package com.example.cuff
 
+import android.graphics.Color
 import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
@@ -65,116 +66,196 @@ class MainActivity : AppCompatActivity() {
         viewGraphsButton = findViewById(R.id.viewGraphsButton)
         logoutButton = findViewById(R.id.logoutButton)
         waterConsumptionButton = findViewById(R.id.waterConsumptionButton)
+        dataRecordingTitle = findViewById(R.id.dataRecordingTitle)
 
         // Set visibility of login/logout and user control buttons based on login state
         updateUIBasedOnLoginState(userEmail)
 
         // BLE command listeners
-        inflateButton.setOnClickListener { bleViewModel.sendCommand("INFLATE") }
-        deflateButton.setOnClickListener { bleViewModel.sendCommand("DEFLATE") }
-        emergencyStopButton.setOnClickListener { bleViewModel.sendCommand("EMERGENCY_STOP") }
+        inflateButton.setOnClickListener {
+            try {
+                bleViewModel.sendCommand("INFLATE")
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error inflating: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        deflateButton.setOnClickListener {
+            try {
+                bleViewModel.sendCommand("DEFLATE")
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error deflating: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        emergencyStopButton.setOnClickListener {
+            try {
+                bleViewModel.sendCommand("EMERGENCY_STOP")
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error stopping: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Login button navigates to LoginActivity using startActivityForResult
         loginOptionButton.setOnClickListener {
-            startActivityForResult(Intent(this, LoginActivity::class.java), LOGIN_REQUEST_CODE)
+            try {
+                startActivityForResult(Intent(this, LoginActivity::class.java), LOGIN_REQUEST_CODE)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error launching login: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Recalibrate button handler
         recalibrateButton.setOnClickListener {
-            performCalibration()
+            try {
+                performCalibration()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error calibrating: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Logout button clears the login state and updates UI without restarting activity
         logoutButton.setOnClickListener {
-            prefs.edit().remove("userEmail").apply()
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
-            updateUIBasedOnLoginState(null)
+            try {
+                prefs.edit().remove("userEmail").apply()
+                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+                updateUIBasedOnLoginState(null)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error logging out: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Water consumption button shows dialog to input water consumption
         waterConsumptionButton.setOnClickListener {
-            showWaterConsumptionDialog()
+            try {
+                showWaterConsumptionDialog()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error showing dialog: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Save Pressure button saves current pressure to Firestore with timestamp
         savePressureButton.setOnClickListener {
-            val currentPressure = bleViewModel.pressureData.value ?: 0
-            val timestamp = System.currentTimeMillis()
-            val db = FirebaseFirestore.getInstance()
-            val data = hashMapOf(
-                "user" to userEmail,
-                "pressure" to currentPressure,
-                "timestamp" to timestamp
-            )
-            db.collection("pressureData")
-                .add(data)
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Pressure data saved", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Error saving data: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            try {
+                val currentPressure = bleViewModel.pressureData.value ?: 0
+                val timestamp = System.currentTimeMillis()
+                val db = FirebaseFirestore.getInstance()
+                val data = hashMapOf(
+                    "user" to userEmail,
+                    "pressure" to currentPressure,
+                    "timestamp" to timestamp
+                )
+                db.collection("pressureData")
+                    .add(data)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Pressure data saved", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Error saving data: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error saving pressure: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // View Graphs button launches GraphActivity
         viewGraphsButton.setOnClickListener {
-            startActivity(Intent(this, GraphActivity::class.java))
+            try {
+                startActivity(Intent(this, GraphActivity::class.java))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error showing graphs: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        // Observe BLE connection state
+        // Observe BLE connection state - give priority to connection state over scan state
         bleViewModel.connectionState.observe(this, Observer { state ->
-            when (state) {
-                BleViewModel.ConnectionState.CONNECTED -> {
-                    statusTextView.text = "Connected to XIAO_ESP32C6"
-                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_connected)
-                    enableButtons(true)
+            try {
+                when (state) {
+                    BleViewModel.ConnectionState.CONNECTED -> {
+                        statusTextView.text = "Connected"
+                        connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_connected)
+                        enableButtons(true)
+                    }
+                    BleViewModel.ConnectionState.CONNECTING -> {
+                        statusTextView.text = "Connecting..."
+                        connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
+                        enableButtons(false)
+                    }
+                    BleViewModel.ConnectionState.DISCONNECTING -> {
+                        statusTextView.text = "Disconnecting..."
+                        connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
+                        enableButtons(false)
+                    }
+                    BleViewModel.ConnectionState.DISCONNECTED -> {
+                        // Only update text if not scanning
+                        if (bleViewModel.scanState.value != BleViewModel.ScanState.SCANNING) {
+                            statusTextView.text = "Disconnected"
+                            connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
+                        }
+                        enableButtons(false)
+                    }
                 }
-                BleViewModel.ConnectionState.CONNECTING -> {
-                    statusTextView.text = "Connecting..."
-                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
-                    enableButtons(false)
-                }
-                BleViewModel.ConnectionState.DISCONNECTING -> {
-                    statusTextView.text = "Disconnecting..."
-                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
-                    enableButtons(false)
-                }
-                BleViewModel.ConnectionState.DISCONNECTED -> {
-                    statusTextView.text = "Disconnected"
-                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
-                    enableButtons(false)
-                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "UI update error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         })
 
-        // Observe scan state
+        // Observe scan state - only update UI based on scan state if not connected
         bleViewModel.scanState.observe(this, Observer { scanState ->
-            when (scanState) {
-                BleViewModel.ScanState.SCANNING -> {
-                    statusTextView.text = "Scanning..."
-                    connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
-                    enableButtons(false)
+            try {
+                // Only update UI if not connected
+                if (bleViewModel.connectionState.value != BleViewModel.ConnectionState.CONNECTED) {
+                    when (scanState) {
+                        BleViewModel.ScanState.SCANNING -> {
+                            statusTextView.text = "Scanning..."
+                            connectionStatusIcon.setImageResource(R.drawable.bluetooth_connecting)
+                            enableButtons(false)
+                        }
+                        BleViewModel.ScanState.IDLE -> {
+                            // Only show idle if disconnected
+                            if (bleViewModel.connectionState.value == BleViewModel.ConnectionState.DISCONNECTED) {
+                                statusTextView.text = "Ready to connect"
+                                connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
+                            }
+                        }
+                    }
                 }
-                BleViewModel.ScanState.IDLE -> {
-                    statusTextView.text = "Scan idle"
-                    connectionStatusIcon.setImageResource(R.drawable.ic_bluetooth_disconnected)
-                    enableButtons(true)
-                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Scan state update error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         })
 
         // Observe pressure data
         bleViewModel.pressureData.observe(this, Observer { pressure ->
-            updatePressureUI(pressure)
+            try {
+                updatePressureUI(pressure)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Pressure update error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         })
 
-        // Observe log messages
+        // Observe log messages - be selective about which log messages we show on UI
         bleViewModel.logMessage.observe(this, Observer { message ->
-            statusTextView.text = message
+            try {
+                // Only update status text with log messages if they're important
+                // and not redundant with connection/scan state
+                if (!message.contains("Scan ") &&  // Don't show scan messages
+                    !message.contains("Connecting") &&
+                    !message.contains("Connected") &&
+                    !message.contains("Disconnected")) {
+                    statusTextView.text = message
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Log message update error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         })
 
         // Check for required permissions and start BLE scan
-        checkPermissionsAndStartScan()
+        try {
+            checkPermissionsAndStartScan()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error starting scan: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // Method to perform calibration
@@ -191,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                 statusTextView.text = "Calibration done!"
                 // Reset to normal status after another 2 seconds
                 Handler(Looper.getMainLooper()).postDelayed({
-                    statusTextView.text = "Connected to XIAO_ESP32C6"
+                    statusTextView.text = "Connected"
                 }, 2000)
             }, 2000)
         } else {
@@ -199,10 +280,10 @@ class MainActivity : AppCompatActivity() {
             // Reset after 2 seconds
             Handler(Looper.getMainLooper()).postDelayed({
                 statusTextView.text = when (bleViewModel.connectionState.value) {
-                    BleViewModel.ConnectionState.CONNECTED -> "Connected to XIAO_ESP32C6"
+                    BleViewModel.ConnectionState.CONNECTED -> "Connected"
                     BleViewModel.ConnectionState.CONNECTING -> "Connecting..."
                     BleViewModel.ConnectionState.DISCONNECTING -> "Disconnecting..."
-                    else -> "Disconnected"
+                    else -> if (bleViewModel.scanState.value == BleViewModel.ScanState.SCANNING) "Scanning..." else "Disconnected"
                 }
             }, 2000)
         }
@@ -253,8 +334,18 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    // New method to update UI based on login state
+    // Updated method to check if views are initialized
     private fun updateUIBasedOnLoginState(userEmail: String?) {
+        // Safely check all required views are initialized
+        if (!::loginOptionButton.isInitialized ||
+            !::savePressureButton.isInitialized ||
+            !::viewGraphsButton.isInitialized ||
+            !::logoutButton.isInitialized ||
+            !::waterConsumptionButton.isInitialized ||
+            !::dataRecordingTitle.isInitialized) {
+            return
+        }
+
         if (userEmail == null) {
             loginOptionButton.visibility = View.VISIBLE
             savePressureButton.visibility = View.GONE
@@ -275,17 +366,25 @@ class MainActivity : AppCompatActivity() {
     // Handle results from activities started with startActivityForResult
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
-            // Update UI based on new login state
-            val userEmail = prefs.getString("userEmail", null)
-            updateUIBasedOnLoginState(userEmail)
+        try {
+            if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
+                // Update UI based on new login state
+                val userEmail = prefs.getString("userEmail", null)
+                updateUIBasedOnLoginState(userEmail)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Activity result error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun enableButtons(enabled: Boolean) {
-        inflateButton.isEnabled = enabled
-        deflateButton.isEnabled = enabled
-        emergencyStopButton.isEnabled = enabled
+        try {
+            inflateButton.isEnabled = enabled
+            deflateButton.isEnabled = enabled
+            emergencyStopButton.isEnabled = enabled
+        } catch (e: Exception) {
+            Toast.makeText(this, "Button enable error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun checkPermissionsAndStartScan() {
@@ -319,32 +418,49 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                bleViewModel.startScan()
-            } else {
-                Toast.makeText(this, "Required permissions not granted", Toast.LENGTH_SHORT).show()
+        try {
+            if (requestCode == PERMISSION_REQUEST_CODE) {
+                if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    bleViewModel.startScan()
+                } else {
+                    Toast.makeText(this, "Required permissions not granted", Toast.LENGTH_SHORT).show()
+                }
             }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Permission result error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun updatePressureUI(pressure: Int) {
-        pressureTextView.text = "Pressure: $pressure/10"
-        pressureBar.progress = pressure * 10
-        val colorRes = when (pressure) {
-            in 7..10 -> android.R.color.holo_red_light
-            in 4..6 -> android.R.color.holo_orange_light
-            else -> android.R.color.holo_green_light
+        try {
+            // Display the pressure value out of 100
+            pressureTextView.text = "Pressure: $pressure/100"
+            // Ensure the progress bar's maximum is set to 100, if not already done
+            pressureBar.max = 100
+            // Set progress directly as the value is already in the 0-100 range
+            pressureBar.progress = pressure
+
+            // Calculate continuous color transition: green (0,255,0) at 0 pressure to red (255,0,0) at 100 pressure.
+            val red = (pressure * 255 / 100).coerceIn(0, 255)
+            val green = ((100 - pressure) * 255 / 100).coerceIn(0, 255)
+            val blue = 0
+            val interpolatedColor = Color.rgb(red, green, blue)
+
+            // Set the progress drawable color to the interpolated color
+            pressureBar.progressDrawable.setColorFilter(interpolatedColor, android.graphics.PorterDuff.Mode.SRC_IN)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Pressure UI error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-        pressureBar.progressDrawable.setColorFilter(
-            ContextCompat.getColor(this, colorRes),
-            android.graphics.PorterDuff.Mode.SRC_IN
-        )
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        bleViewModel.stopScan()
-        bleViewModel.disconnect()
+        try {
+            super.onDestroy()
+            bleViewModel.stopScan()
+            bleViewModel.disconnect()
+        } catch (e: Exception) {
+            // Can't show Toast here as activity is being destroyed
+            e.printStackTrace()
+        }
     }
 }

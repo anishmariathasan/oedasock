@@ -91,7 +91,7 @@
                 android:id="@+id/pressureTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Pressure: 0/10"
+                android:text="Pressure: 0/100"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
