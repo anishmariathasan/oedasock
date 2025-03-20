@@ -45,7 +45,7 @@ class GraphActivity : AppCompatActivity() {
         }
 
         // Configure pressure chart
-        setupChart(pressureChart, "Pressure Over Time")
+        setupChart(pressureChart, "Pressure Change Over Time")
 
         val db = FirebaseFirestore.getInstance()
 

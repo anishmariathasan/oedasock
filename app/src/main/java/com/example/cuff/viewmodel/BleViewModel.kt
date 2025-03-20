@@ -49,6 +49,18 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     private var isScanning = false
     private val SCAN_PERIOD: Long = 10000 // 10 seconds
 
+    private var periodicScanHandler = Handler(Looper.getMainLooper())
+    private val periodicScanRunnable = object : Runnable {
+        override fun run() {
+            if (_connectionState.value != ConnectionState.CONNECTED) {
+                log("Starting periodic scan...")
+                startScan()
+            }
+            // Schedule the next scan
+            periodicScanHandler.postDelayed(this, 15000) // Try every 15 seconds
+        }
+    }
+
     // Helper function to safely retrieve a device name
     @SuppressLint("MissingPermission")
     private fun getDeviceName(device: BluetoothDevice): String {
@@ -69,16 +81,16 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         override fun onDeviceConnected(device: BluetoothDevice) {
             _connectionState.postValue(ConnectionState.CONNECTED)
             log("Connected to ${getDeviceName(device)}")
+            // Stop periodic scanning when connected
+            stopPeriodicScanning()
         }
 
         override fun onDeviceFailedToConnect(device: BluetoothDevice, reason: Int) {
             _connectionState.postValue(ConnectionState.DISCONNECTED)
             log("Failed to connect: $reason")
             isConnecting = false
-            // Try to scan again after a delay
-            Handler(Looper.getMainLooper()).postDelayed({
-                startScan()
-            }, 1000)
+            // Start periodic scanning
+            startPeriodicScanning()
         }
 
         override fun onDeviceReady(device: BluetoothDevice) {
@@ -95,10 +107,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         override fun onDeviceDisconnected(device: BluetoothDevice, reason: Int) {
             _connectionState.postValue(ConnectionState.DISCONNECTED)
             log("Disconnected: $reason")
-            // Try to scan again after a delay
-            Handler(Looper.getMainLooper()).postDelayed({
-                startScan()
-            }, 1000)
+            // Start periodic scanning
+            startPeriodicScanning()
         }
     }
 
@@ -127,6 +137,19 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     enum class ScanState {
         SCANNING,
         IDLE
+    }
+
+    // Start periodic scanning
+    private fun startPeriodicScanning() {
+        // Remove any existing callbacks to avoid duplicates
+        periodicScanHandler.removeCallbacks(periodicScanRunnable)
+        // Start periodic scanning
+        periodicScanHandler.postDelayed(periodicScanRunnable, 5000) // First retry after 5 seconds
+    }
+
+    // Stop periodic scanning
+    private fun stopPeriodicScanning() {
+        periodicScanHandler.removeCallbacks(periodicScanRunnable)
     }
 
     // Get Bluetooth adapter
@@ -191,7 +214,11 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
             scanner.stopScan(scanCallback)
             isScanning = false
             _scanState.value = ScanState.IDLE
-            log("Scan failed")
+            // Only log scan stopped if not connected or connecting
+            if (_connectionState.value != ConnectionState.CONNECTED &&
+                _connectionState.value != ConnectionState.CONNECTING) {
+                log("Scan stopped")
+            }
         } catch (e: Exception) {
             log("Error stopping scan: ${e.message}")
         }
@@ -292,6 +319,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         stopScan()
+        stopPeriodicScanning()
         disconnect()
     }
 }

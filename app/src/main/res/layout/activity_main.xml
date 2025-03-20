@@ -7,27 +7,46 @@
     android:padding="16dp"
     android:background="@android:color/white">
 
-    <!-- Login Option Button (visible if not logged in) -->
-    <Button
-        android:id="@+id/loginOptionButton"
-        android:layout_width="wrap_content"
+    <!-- Top section: Login/Logout and Recalibrate -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/colorPrimary"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp">
 
-    <!-- Logout Button: Only visible when user is logged in -->
-    <Button
-        android:id="@+id/logoutButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/colorPrimary"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp" />
+        <!-- Login Option Button (visible if not logged in) -->
+        <Button
+            android:id="@+id/loginOptionButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Login"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_marginEnd="4dp" />
+
+        <!-- Logout Button: Only visible when user is logged in -->
+        <Button
+            android:id="@+id/logoutButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/recalibrateButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Recalibrate"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
 
     <!-- Connection status indicator with icon -->
     <LinearLayout
@@ -54,27 +73,41 @@
             android:layout_marginStart="8dp" />
     </LinearLayout>
 
-    <!-- Pressure display -->
-    <TextView
-        android:id="@+id/pressureTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pressure: 0/10"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="center_horizontal"/>
-
-    <!-- Pressure metric as a horizontal progress bar -->
-    <ProgressBar
-        android:id="@+id/pressureBar"
-        style="?android:attr/progressBarStyleHorizontal"
+    <!-- Card-like container for pressure display -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:max="100"
-        android:layout_marginTop="8dp"
-        android:progressDrawable="@drawable/progress_bar_custom"/>
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:elevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Pressure display -->
+            <TextView
+                android:id="@+id/pressureTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pressure: 0/10"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:gravity="center"/>
+
+            <!-- Pressure metric as a horizontal progress bar -->
+            <ProgressBar
+                android:id="@+id/pressureBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:max="100"
+                android:layout_marginTop="8dp"
+                android:progressDrawable="@drawable/progress_bar_custom"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- Inflate and Deflate buttons side by side -->
     <LinearLayout
@@ -82,7 +115,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="32dp">
+        android:layout_marginBottom="16dp">
 
         <Button
             android:id="@+id/inflateButton"
@@ -92,7 +125,7 @@
             android:text="Inflate +"
             android:textColor="@android:color/white"
             android:background="@drawable/inflate_button_selector"
-            android:layout_margin="8dp"
+            android:layout_marginEnd="8dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"/>
 
@@ -104,43 +137,64 @@
             android:text="Deflate -"
             android:textColor="@android:color/white"
             android:background="@drawable/deflate_button_selector"
-            android:layout_margin="8dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"/>
     </LinearLayout>
 
-    <!-- Emergency Stop button below and centered -->
+    <!-- Emergency Stop button centered -->
     <Button
         android:id="@+id/emergencyStopButton"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Emergency Stop"
         android:textColor="@android:color/white"
         android:backgroundTint="#cb2e0d"
-        android:layout_margin="8dp"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:layout_gravity="center_horizontal"/>
+        android:layout_marginBottom="16dp"/>
 
-    <!-- Buttons for logged in users -->
-    <Button
-        android:id="@+id/savePressureButton"
-        android:layout_width="wrap_content"
+    <!-- Data Recording Section - Only visible when logged in -->
+    <TextView
+        android:id="@+id/dataRecordingTitle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Save Pressure"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/colorPrimary"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="center_horizontal" />
+        android:text="DATA RECORDING"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"/>
 
-    <Button
-        android:id="@+id/viewGraphsButton"
-        android:layout_width="wrap_content"
+    <!-- Save Pressure and View Graphs buttons side by side -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="View Pressure/time Graph"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/savePressureButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Save Pressure"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/viewGraphsButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="View Graphs"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/colorPrimary" />
+    </LinearLayout>
+
+    <!-- Water consumption button full width -->
+    <Button
+        android:id="@+id/waterConsumptionButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Log Water Consumption"
         android:textColor="@android:color/white"
-        android:backgroundTint="@color/colorPrimary"
-        android:layout_marginTop="8dp"
-        android:layout_gravity="center_horizontal" />
+        android:backgroundTint="@color/teal_700" />
 
 </LinearLayout>

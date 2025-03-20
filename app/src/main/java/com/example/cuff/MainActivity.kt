@@ -6,9 +6,12 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -28,9 +31,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emergencyStopButton: Button
     private lateinit var pressureBar: ProgressBar
     private lateinit var loginOptionButton: Button
+    private lateinit var recalibrateButton: Button
     private lateinit var savePressureButton: Button
     private lateinit var viewGraphsButton: Button
     private lateinit var logoutButton: Button
+    private lateinit var waterConsumptionButton: Button
+    private lateinit var dataRecordingTitle: TextView
     private lateinit var prefs: SharedPreferences
 
     private val bleViewModel: BleViewModel by viewModels()
@@ -54,9 +60,11 @@ class MainActivity : AppCompatActivity() {
         emergencyStopButton = findViewById(R.id.emergencyStopButton)
         pressureBar = findViewById(R.id.pressureBar)
         loginOptionButton = findViewById(R.id.loginOptionButton)
+        recalibrateButton = findViewById(R.id.recalibrateButton)
         savePressureButton = findViewById(R.id.savePressureButton)
         viewGraphsButton = findViewById(R.id.viewGraphsButton)
         logoutButton = findViewById(R.id.logoutButton)
+        waterConsumptionButton = findViewById(R.id.waterConsumptionButton)
 
         // Set visibility of login/logout and user control buttons based on login state
         updateUIBasedOnLoginState(userEmail)
@@ -71,11 +79,21 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(Intent(this, LoginActivity::class.java), LOGIN_REQUEST_CODE)
         }
 
+        // Recalibrate button handler
+        recalibrateButton.setOnClickListener {
+            performCalibration()
+        }
+
         // Logout button clears the login state and updates UI without restarting activity
         logoutButton.setOnClickListener {
             prefs.edit().remove("userEmail").apply()
             Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
             updateUIBasedOnLoginState(null)
+        }
+
+        // Water consumption button shows dialog to input water consumption
+        waterConsumptionButton.setOnClickListener {
+            showWaterConsumptionDialog()
         }
 
         // Save Pressure button saves current pressure to Firestore with timestamp
@@ -159,6 +177,82 @@ class MainActivity : AppCompatActivity() {
         checkPermissionsAndStartScan()
     }
 
+    // Method to perform calibration
+    private fun performCalibration() {
+        // Only send CALIBRATE if connected
+        if (bleViewModel.connectionState.value == BleViewModel.ConnectionState.CONNECTED) {
+            bleViewModel.sendCommand("CALIBRATE")
+
+            // Show calibrating status
+            statusTextView.text = "Calibrating..."
+
+            // Simulate completion after 2 seconds
+            Handler(Looper.getMainLooper()).postDelayed({
+                statusTextView.text = "Calibration done!"
+                // Reset to normal status after another 2 seconds
+                Handler(Looper.getMainLooper()).postDelayed({
+                    statusTextView.text = "Connected to XIAO_ESP32C6"
+                }, 2000)
+            }, 2000)
+        } else {
+            statusTextView.text = "Not connected. Cannot calibrate."
+            // Reset after 2 seconds
+            Handler(Looper.getMainLooper()).postDelayed({
+                statusTextView.text = when (bleViewModel.connectionState.value) {
+                    BleViewModel.ConnectionState.CONNECTED -> "Connected to XIAO_ESP32C6"
+                    BleViewModel.ConnectionState.CONNECTING -> "Connecting..."
+                    BleViewModel.ConnectionState.DISCONNECTING -> "Disconnecting..."
+                    else -> "Disconnected"
+                }
+            }, 2000)
+        }
+    }
+
+    // Method to show water consumption input dialog
+    private fun showWaterConsumptionDialog() {
+        val userEmail = prefs.getString("userEmail", null) ?: return
+
+        val input = EditText(this)
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        input.hint = "Enter glasses of water (0-10)"
+
+        AlertDialog.Builder(this)
+            .setTitle("Water Consumption")
+            .setMessage("How many glasses of water did you drink today?")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val waterAmount = input.text.toString().toIntOrNull() ?: 0
+                if (waterAmount in 1..20) {
+                    saveWaterConsumption(userEmail, waterAmount)
+                } else {
+                    Toast.makeText(this, "Please enter a value between 1 and 20", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    // Method to save water consumption to Firestore
+    private fun saveWaterConsumption(userEmail: String, glasses: Int) {
+        val timestamp = System.currentTimeMillis()
+        val db = FirebaseFirestore.getInstance()
+        val data = hashMapOf(
+            "user" to userEmail,
+            "waterGlasses" to glasses,
+            "timestamp" to timestamp,
+            "date" to java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date())
+        )
+
+        db.collection("waterConsumption")
+            .add(data)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Water consumption saved", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error saving data: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
     // New method to update UI based on login state
     private fun updateUIBasedOnLoginState(userEmail: String?) {
         if (userEmail == null) {
@@ -166,11 +260,15 @@ class MainActivity : AppCompatActivity() {
             savePressureButton.visibility = View.GONE
             viewGraphsButton.visibility = View.GONE
             logoutButton.visibility = View.GONE
+            waterConsumptionButton.visibility = View.GONE
+            dataRecordingTitle.visibility = View.GONE
         } else {
             loginOptionButton.visibility = View.GONE
             savePressureButton.visibility = View.VISIBLE
             viewGraphsButton.visibility = View.VISIBLE
             logoutButton.visibility = View.VISIBLE
+            waterConsumptionButton.visibility = View.VISIBLE
+            dataRecordingTitle.visibility = View.VISIBLE
         }
     }
 
