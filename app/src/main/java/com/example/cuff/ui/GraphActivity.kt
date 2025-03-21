@@ -73,7 +73,7 @@ class GraphActivity : AppCompatActivity() {
                     pressureEntries.add(Entry(timestamps.size.toFloat() - 1, pressure.toFloat()))
                 }
 
-                val pressureDataSet = LineDataSet(pressureEntries, "Pressure (0-10)")
+                val pressureDataSet = LineDataSet(pressureEntries, "Pressure (0-100)")
                 styleDataSet(pressureDataSet, R.color.colorPrimary)
 
                 val pressureLineData = LineData(pressureDataSet)
@@ -82,11 +82,11 @@ class GraphActivity : AppCompatActivity() {
                 // Configure X axis to show dates
                 pressureChart.xAxis.valueFormatter = DateAxisValueFormatter(timestamps)
 
-                // Set Y axis range to 0-10
+                // Set Y axis range to 0-100
                 pressureChart.axisLeft.axisMinimum = 0f
-                pressureChart.axisLeft.axisMaximum = 10f
+                pressureChart.axisLeft.axisMaximum = 100f
                 pressureChart.axisRight.axisMinimum = 0f
-                pressureChart.axisRight.axisMaximum = 10f
+                pressureChart.axisRight.axisMaximum = 100f
 
                 pressureChart.invalidate() // refresh the chart
             }
