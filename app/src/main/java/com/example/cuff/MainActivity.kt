@@ -21,6 +21,10 @@ import com.example.cuff.ui.LoginActivity
 import com.example.cuff.viewmodel.BleViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.cuff.ui.GraphActivity
+import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ClipDrawable
+import android.view.Gravity
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,6 +71,9 @@ class MainActivity : AppCompatActivity() {
         logoutButton = findViewById(R.id.logoutButton)
         waterConsumptionButton = findViewById(R.id.waterConsumptionButton)
         dataRecordingTitle = findViewById(R.id.dataRecordingTitle)
+
+        // Set up progress bar with initial gray background
+        setupProgressBar()
 
         // Set visibility of login/logout and user control buttons based on login state
         updateUIBasedOnLoginState(userEmail)
@@ -258,6 +265,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // New method to set up the progress bar with gray background
+    private fun setupProgressBar() {
+        try {
+            // Ensure the progress bar's maximum is set to 100
+            pressureBar.max = 100
+
+            // Set the initial color of the progress bar
+            val drawable = pressureBar.progressDrawable
+            if (drawable is LayerDrawable) {
+                // Get the background (track) drawable - usually at index 0
+                val backgroundDrawable = drawable.findDrawableByLayerId(android.R.id.background)
+                // Set the background to gray
+                backgroundDrawable?.setColorFilter(Color.LTGRAY, android.graphics.PorterDuff.Mode.SRC_IN)
+
+                // Get the progress drawable (foreground) - usually at index 1 or android.R.id.progress
+                val progressDrawable = drawable.findDrawableByLayerId(android.R.id.progress)
+                // Set initial color as green
+                progressDrawable?.setColorFilter(Color.GREEN, android.graphics.PorterDuff.Mode.SRC_IN)
+            }
+
+            // Initial progress is 0
+            pressureBar.progress = 0
+        } catch (e: Exception) {
+            Toast.makeText(this, "Progress bar setup error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Method to perform calibration
     private fun performCalibration() {
         // Only send CALIBRATE if connected
@@ -431,25 +465,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Updated method to fix color transition issues
     private fun updatePressureUI(pressure: Int) {
         try {
             // Display the pressure value out of 100
             pressureTextView.text = "Pressure: $pressure/100"
-            // Ensure the progress bar's maximum is set to 100, if not already done
-            pressureBar.max = 100
+
             // Set progress directly as the value is already in the 0-100 range
             pressureBar.progress = pressure
 
-            // Calculate continuous color transition: green (0,255,0) at 0 pressure to red (255,0,0) at 100 pressure.
+            // Calculate continuous color transition: green (0,255,0) at 0 pressure to red (255,0,0) at 100 pressure
             val red = (pressure * 255 / 100).coerceIn(0, 255)
             val green = ((100 - pressure) * 255 / 100).coerceIn(0, 255)
             val blue = 0
             val interpolatedColor = Color.rgb(red, green, blue)
 
-            // Set the progress drawable color to the interpolated color
-            pressureBar.progressDrawable.setColorFilter(interpolatedColor, android.graphics.PorterDuff.Mode.SRC_IN)
+            // Get the progress drawable
+            val drawable = pressureBar.progressDrawable
+            if (drawable is LayerDrawable) {
+                try {
+                    // Make sure we apply the color only to the progress part
+                    val progressDrawable = drawable.findDrawableByLayerId(android.R.id.progress)
+                    progressDrawable?.setColorFilter(interpolatedColor, android.graphics.PorterDuff.Mode.SRC_IN)
+                } catch (e: Exception) {
+                    // If we can't apply the color to just the progress part, apply to the whole bar
+                    pressureBar.progressDrawable.setColorFilter(interpolatedColor, android.graphics.PorterDuff.Mode.SRC_IN)
+                }
+            } else {
+                // If we can't cast to LayerDrawable, just apply the filter to the drawable directly
+                pressureBar.progressDrawable.setColorFilter(interpolatedColor, android.graphics.PorterDuff.Mode.SRC_IN)
+            }
         } catch (e: Exception) {
-            Toast.makeText(this, "Pressure UI error: ${e.message}", Toast.LENGTH_SHORT).show()
+            // Log the error without showing a toast to avoid infinite loop of errors
+            e.printStackTrace()
         }
     }
 
