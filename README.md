@@ -1,4 +1,4 @@
-# Foot Cuff Control App
+# Foot Cuff Control App - OedaSock
 
 This Android application is designed to control a foot cuff used to treat oedema. The app communicates with a **Seeed XIAO ESP32S3 microcontroller** via BLE to manage the inflation and deflation of the cuff based on strain readings. It features an emergency stop functionality, manual control buttons, a progress bar to visualize the cuff's inflation/deflation state, and BLE connectivity for controlling the microcontroller. The app also includes login functionality where users can input their biometrics (weight, height, age, and gender) and track their weight and pressure over time. Users can save their pressure data via a button, and graphs of the weight and pressure over time can be viewed. There is also logout functionality. It was created for an Imperial College London module project competition, where it placed first. The NordicSemiconductor Kotlin BLE Library has been used as a wrapper around the native API as BLE in Android is a pain.
 
